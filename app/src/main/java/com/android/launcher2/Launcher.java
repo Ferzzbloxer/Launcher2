@@ -48,6 +48,8 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+
+import androidx.core.content.ContextCompat;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -429,7 +431,9 @@ public final class Launcher extends Activity
         Selection.setSelection(mDefaultKeySsb, 0);
 
         IntentFilter filter = new IntentFilter(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
-        registerReceiver(mCloseSystemDialogsReceiver, filter);
+        // System-only broadcast - see RECEIVER_NOT_EXPORTED note in LauncherApplication.
+        ContextCompat.registerReceiver(this, mCloseSystemDialogsReceiver, filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED);
 
         updateGlobalIcons();
 
@@ -1334,7 +1338,9 @@ public final class Launcher extends Activity
         filter.addAction(Intent.ACTION_USER_PRESENT);
         filter.addAction(Intent.ACTION_MANAGED_PROFILE_ADDED);
         filter.addAction(Intent.ACTION_MANAGED_PROFILE_REMOVED);
-        registerReceiver(mReceiver, filter);
+        // System-only broadcast - see RECEIVER_NOT_EXPORTED note in LauncherApplication.
+        ContextCompat.registerReceiver(this, mReceiver, filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED);
         FirstFrameAnimatorHelper.initializeDrawListener(getWindow().getDecorView());
         mAttached = true;
         mVisible = true;

@@ -29,6 +29,8 @@ import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 
+import androidx.core.content.ContextCompat;
+
 import com.android.launcher2.R;
 
 import java.io.File;
@@ -75,16 +77,24 @@ public class LauncherApplication extends Application {
             launcherApps.registerCallback(mModel.getLauncherAppsCallback());
 
             // Register intent receivers
+            // NOTE: registerReceiver() now requires an explicit exported flag (Android 13+,
+            // enforced starting Android 14 / API 34). All three filters below only ever
+            // carry system-generated broadcasts, so RECEIVER_NOT_EXPORTED is correct -
+            // no other app should be able to send these to us. ContextCompat provides the
+            // flag constant back to minSdk without an SDK_INT check.
             IntentFilter filter = new IntentFilter();
             filter.addAction(Intent.ACTION_LOCALE_CHANGED);
             filter.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
-            registerReceiver(mModel, filter);
+            ContextCompat.registerReceiver(this, mModel, filter,
+                    ContextCompat.RECEIVER_NOT_EXPORTED);
             filter = new IntentFilter();
             filter.addAction(SearchManager.INTENT_GLOBAL_SEARCH_ACTIVITY_CHANGED);
-            registerReceiver(mModel, filter);
+            ContextCompat.registerReceiver(this, mModel, filter,
+                    ContextCompat.RECEIVER_NOT_EXPORTED);
             filter = new IntentFilter();
             filter.addAction(SearchManager.INTENT_ACTION_SEARCHABLES_CHANGED);
-            registerReceiver(mModel, filter);
+            ContextCompat.registerReceiver(this, mModel, filter,
+                    ContextCompat.RECEIVER_NOT_EXPORTED);
 
             // Register for changes to the favorites
             ContentResolver resolver = getContentResolver();
