@@ -150,7 +150,7 @@
         <attr name="spanX" format="string" />
         <attr name="spanY" format="string" />
         <attr name="icon" format="reference" />  
-        <attr name="title" format="reference" />
+        <attr name="favoriteTitle" format="reference" />
         <attr name="uri" format="string" />
     </declare-styleable>
     <declare-styleable name="Extra">
