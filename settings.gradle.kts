@@ -1,4 +1,17 @@
-// Top-level build file: declares plugin versions once, applied per-module (apply false).
-plugins {
-    id("com.android.application") version "8.13.0" apply false
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
 }
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "Launcher2Port"
+include(":app")
