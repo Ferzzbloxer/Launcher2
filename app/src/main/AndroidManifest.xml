@@ -75,7 +75,7 @@
             android:clearTaskOnLaunch="true"
             android:stateNotNeeded="true"
             android:resumeWhilePausing="true"
-            android:theme="@style/Theme"
+            android:theme="@style/LauncherTheme"
             android:windowSoftInputMode="adjustPan"
             android:screenOrientation="nosensor">
             <intent-filter>
@@ -140,7 +140,7 @@
 
         <!-- CHANGED: implicit broadcast receivers for package events must be
              registered at RUNTIME on Android 8+ (registerReceiver in code),
-             not in the manifest -- manifest-declared implicit broadcasts for
+             not in the manifest - manifest-declared implicit broadcasts for
              these actions are ignored by the OS. This receiver needs to move
              into LauncherApplication.onCreate() / a Service using
              Context.registerReceiver(). Left here commented as a reminder;
