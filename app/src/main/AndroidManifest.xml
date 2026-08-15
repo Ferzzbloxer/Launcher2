@@ -13,7 +13,7 @@
          signed with the platform key or preinstalled as a privileged system app.
          A sideloaded/store APK can never hold these, so they're downgraded.
          This means PRELOAD_WORKSPACE and WRITE_SETTINGS are no longer restricted
-         to platform-signed callers only -- acceptable for a personal/hobby launcher,
+         to platform-signed callers only - acceptable for a personal/hobby launcher,
          but worth knowing if you ever expand this app's scope. -->
     <permission
         android:name="com.android.launcher.permission.PRELOAD_WORKSPACE"
