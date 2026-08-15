@@ -286,6 +286,14 @@ public class WallpaperChooserDialogFragment extends DialogFragment implements
                         "Out of memory trying to load wallpaper res=%08x", params[0]),
                         e);
                 return null;
+            } catch (Resources.NotFoundException e) {
+                // Some OEM builds don't ship (or have renamed) the private framework
+                // default_wallpaper resource that default_wallpaper.xml points at via
+                // "@*android:drawable/default_wallpaper". Skip this entry instead of
+                // crashing the whole app - the thumbnail just won't load.
+                Log.w(TAG, String.format(
+                        "Wallpaper resource not found res=%08x", params[0]), e);
+                return null;
             }
         }
 

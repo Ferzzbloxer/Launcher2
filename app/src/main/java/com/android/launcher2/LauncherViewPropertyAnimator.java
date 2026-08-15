@@ -78,7 +78,17 @@ public class LauncherViewPropertyAnimator extends Animator implements AnimatorLi
 
     @Override
     public void end() {
-        throw new RuntimeException("Not implemented");
+        // NOTE: this used to unconditionally throw "Not implemented". Modern Android's
+        // AnimatorSet.forceToEnd() (called e.g. when one animation interrupts another,
+        // such as re-triggering the all-apps open/close animation quickly) calls end()
+        // on every child Animator, so throwing here crashes the app instead of just
+        // this animator. There's no public API to jump a ViewPropertyAnimator straight
+        // to its end values, so the closest safe behavior is to cancel it - same as our
+        // own cancel() above - which stops the animation and fires the listener
+        // callbacks instead of leaving it hanging or crashing the process.
+        if (mViewPropertyAnimator != null) {
+            mViewPropertyAnimator.cancel();
+        }
     }
 
     @Override
