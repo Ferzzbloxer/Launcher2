@@ -22,7 +22,6 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.Region;
-import android.graphics.Region.Op;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -182,7 +181,12 @@ public class BubbleTextView extends TextView {
         destCanvas.scale(getScaleX(), getScaleY(),
                 (getWidth() + padding) / 2, (getHeight() + padding) / 2);
         destCanvas.translate(-getScrollX() + padding / 2, -getScrollY() + padding / 2);
-        destCanvas.clipRect(clipRect, Op.REPLACE);
+        // NOTE: Region.Op.REPLACE is no longer accepted by Canvas.clipRect() on modern
+        // Android (throws IllegalArgumentException - only INTERSECT and DIFFERENCE are
+        // allowed now). This is the first clip applied to a freshly created bitmap canvas
+        // (see createGlowingOutline() below), so a plain INTERSECT clip has the same
+        // effect REPLACE used to have here.
+        destCanvas.clipRect(clipRect);
         draw(destCanvas);
         destCanvas.restore();
     }

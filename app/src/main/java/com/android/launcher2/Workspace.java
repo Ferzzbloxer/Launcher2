@@ -37,7 +37,6 @@ import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
-import android.graphics.Region.Op;
 import android.graphics.drawable.Drawable;
 import android.os.IBinder;
 import android.os.Parcelable;
@@ -1793,7 +1792,10 @@ public class Workspace extends SmoothPagedView
                         tv.getLayout().getLineTop(0);
             }
             destCanvas.translate(-v.getScrollX() + padding / 2, -v.getScrollY() + padding / 2);
-            destCanvas.clipRect(clipRect, Op.REPLACE);
+            // NOTE: Region.Op.REPLACE is no longer accepted by Canvas.clipRect() on modern
+            // Android. This is the first clip applied to this (freshly created) drag-view
+            // bitmap canvas, so a plain INTERSECT clip has the same effect.
+            destCanvas.clipRect(clipRect);
             v.draw(destCanvas);
 
             // Restore text visibility of FolderIcon if necessary
