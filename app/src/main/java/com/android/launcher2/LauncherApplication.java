@@ -25,15 +25,27 @@ import android.content.IntentFilter;
 import android.content.pm.LauncherApps;
 import android.content.res.Configuration;
 import android.database.ContentObserver;
+import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 
 import com.android.launcher2.R;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.ref.WeakReference;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class LauncherApplication extends Application {
     static final String TAG = "LauncherApplication";
+    // TEMP DEBUG LOGGING: crash details get appended here so they can be pulled
+    // with `adb shell run-as <pkg> cat files/crash_log.txt` (or `adb pull` on a
+    // debuggable/rooted build). Remove this whole block once the crash is fixed.
+    private static final String CRASH_LOG_FILE_NAME = "crash_log.txt";
     private LauncherModel mModel;
     private IconCache mIconCache;
     private WidgetPreviewLoader.CacheDb mWidgetPreviewCacheDb;
@@ -45,35 +57,96 @@ public class LauncherApplication extends Application {
 
     @Override
     public void onCreate() {
-        super.onCreate();
+        // TEMP DEBUG LOGGING: install this first, before anything else can throw.
+        installCrashLogger();
 
-        // set sIsScreenXLarge and sScreenDensity *before* creating icon cache
-        sIsScreenLarge = getResources().getBoolean(R.bool.is_large_screen);
-        sScreenDensity = getResources().getDisplayMetrics().density;
+        try {
+            super.onCreate();
 
-        recreateWidgetPreviewDb();
-        mIconCache = new IconCache(this);
-        mModel = new LauncherModel(this, mIconCache);
-        LauncherApps launcherApps = (LauncherApps)
-                getSystemService(Context.LAUNCHER_APPS_SERVICE);
-        launcherApps.registerCallback(mModel.getLauncherAppsCallback());
+            // set sIsScreenXLarge and sScreenDensity *before* creating icon cache
+            sIsScreenLarge = getResources().getBoolean(R.bool.is_large_screen);
+            sScreenDensity = getResources().getDisplayMetrics().density;
 
-        // Register intent receivers
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_LOCALE_CHANGED);
-        filter.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
-        registerReceiver(mModel, filter);
-        filter = new IntentFilter();
-        filter.addAction(SearchManager.INTENT_GLOBAL_SEARCH_ACTIVITY_CHANGED);
-        registerReceiver(mModel, filter);
-        filter = new IntentFilter();
-        filter.addAction(SearchManager.INTENT_ACTION_SEARCHABLES_CHANGED);
-        registerReceiver(mModel, filter);
+            recreateWidgetPreviewDb();
+            mIconCache = new IconCache(this);
+            mModel = new LauncherModel(this, mIconCache);
+            LauncherApps launcherApps = (LauncherApps)
+                    getSystemService(Context.LAUNCHER_APPS_SERVICE);
+            launcherApps.registerCallback(mModel.getLauncherAppsCallback());
 
-        // Register for changes to the favorites
-        ContentResolver resolver = getContentResolver();
-        resolver.registerContentObserver(LauncherSettings.Favorites.CONTENT_URI, true,
-                mFavoritesObserver);
+            // Register intent receivers
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(Intent.ACTION_LOCALE_CHANGED);
+            filter.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
+            registerReceiver(mModel, filter);
+            filter = new IntentFilter();
+            filter.addAction(SearchManager.INTENT_GLOBAL_SEARCH_ACTIVITY_CHANGED);
+            registerReceiver(mModel, filter);
+            filter = new IntentFilter();
+            filter.addAction(SearchManager.INTENT_ACTION_SEARCHABLES_CHANGED);
+            registerReceiver(mModel, filter);
+
+            // Register for changes to the favorites
+            ContentResolver resolver = getContentResolver();
+            resolver.registerContentObserver(LauncherSettings.Favorites.CONTENT_URI, true,
+                    mFavoritesObserver);
+        } catch (Throwable t) {
+            // TEMP DEBUG LOGGING: Application.onCreate() itself is a common place
+            // for an instant-crash to originate, so log it explicitly here too,
+            // in addition to the global handler below.
+            logCrashToFile("Application.onCreate", t);
+            throw t;
+        }
+    }
+
+    /**
+     * TEMP DEBUG LOGGING: writes every uncaught exception (on any thread) to
+     * files/crash_log.txt in the app's private data dir, then hands off to
+     * whatever default handler was already installed (system default, or
+     * Play/vendor crash reporter) so normal crash behavior is unaffected.
+     * Remove once the instant-crash is diagnosed and fixed.
+     */
+    private void installCrashLogger() {
+        final Thread.UncaughtExceptionHandler previous =
+                Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread thread, Throwable ex) {
+                logCrashToFile("thread=" + thread.getName(), ex);
+                if (previous != null) {
+                    previous.uncaughtException(thread, ex);
+                }
+            }
+        });
+    }
+
+    private void logCrashToFile(String context, Throwable t) {
+        try {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            t.printStackTrace(pw);
+
+            String timestamp = new SimpleDateFormat(
+                    "yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(new Date());
+            String entry = "----- " + timestamp + " (" + context + ") -----\n"
+                    + "Android SDK " + Build.VERSION.SDK_INT
+                    + " / " + Build.MANUFACTURER + " " + Build.MODEL + "\n"
+                    + sw.toString() + "\n";
+
+            // files/ is the app's private data dir (getFilesDir()), always
+            // writable without extra permissions on any Android version.
+            File outFile = new File(getFilesDir(), CRASH_LOG_FILE_NAME);
+            FileWriter fw = new FileWriter(outFile, /* append */ true);
+            fw.write(entry);
+            fw.flush();
+            fw.close();
+
+            Log.e(TAG, "Crash logged to " + outFile.getAbsolutePath(), t);
+        } catch (Throwable loggingFailure) {
+            // Never let the logger itself cause a secondary crash or mask
+            // the original exception.
+            Log.e(TAG, "Failed to write crash log", loggingFailure);
+        }
     }
 
     public void recreateWidgetPreviewDb() {
