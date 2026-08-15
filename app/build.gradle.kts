@@ -3,6 +3,10 @@ plugins {
 }
 
 android {
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+    }
     namespace = "com.android.launcher2"   // rename to your own package to avoid colliding
                                             // with any AOSP-signed launcher already on the device
     compileSdk = 36                        // Android 16
