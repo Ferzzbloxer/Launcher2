@@ -27,7 +27,7 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.android.launcher.R;
+import com.android.launcher2.R;
 
 public class InfoDropTarget extends ButtonDropTarget {
 

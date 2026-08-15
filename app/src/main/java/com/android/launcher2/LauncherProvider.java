@@ -52,7 +52,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Xml;
 
-import com.android.launcher.R;
+import com.android.launcher2.R;
 import com.android.launcher2.LauncherSettings.Favorites;
 
 import org.xmlpull.v1.XmlPullParser;

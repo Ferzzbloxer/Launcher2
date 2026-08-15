@@ -49,7 +49,7 @@ import android.os.UserHandle;
 import android.os.UserManager;
 import android.util.Log;
 
-import com.android.launcher.R;
+import com.android.launcher2.R;
 import com.android.launcher2.InstallWidgetReceiver.WidgetMimeTypeHandlerData;
 
 import java.lang.ref.WeakReference;

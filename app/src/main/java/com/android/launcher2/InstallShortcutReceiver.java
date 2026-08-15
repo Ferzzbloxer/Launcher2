@@ -28,7 +28,7 @@ import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.android.launcher.R;
+import com.android.launcher2.R;
 
 import java.util.ArrayList;
 import java.util.HashSet;

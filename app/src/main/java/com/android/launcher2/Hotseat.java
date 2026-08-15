@@ -26,7 +26,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import com.android.launcher.R;
+import com.android.launcher2.R;
 
 public class Hotseat extends FrameLayout {
     @SuppressWarnings("unused")

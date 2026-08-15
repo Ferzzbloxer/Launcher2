@@ -24,7 +24,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 
-import com.android.launcher.R;
+import com.android.launcher2.R;
 
 public class HandleView extends ImageView {
     private static final int ORIENTATION_HORIZONTAL = 1;

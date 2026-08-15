@@ -28,7 +28,7 @@ import android.graphics.drawable.Drawable;
 
 import android.os.AsyncTask;
 import android.view.View;
-import com.android.launcher.R;
+import com.android.launcher2.R;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;

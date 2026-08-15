@@ -40,7 +40,7 @@ import android.view.animation.Interpolator;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
-import com.android.launcher.R;
+import com.android.launcher2.R;
 
 import java.util.ArrayList;
 

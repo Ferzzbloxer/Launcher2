@@ -54,7 +54,7 @@ import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.android.launcher.R;
+import com.android.launcher2.R;
 import com.android.launcher2.DropTarget.DragObject;
 
 import java.util.ArrayList;

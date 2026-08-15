@@ -28,7 +28,7 @@ import android.database.ContentObserver;
 import android.os.Handler;
 import android.util.Log;
 
-import com.android.launcher.R;
+import com.android.launcher2.R;
 
 import java.lang.ref.WeakReference;
 
