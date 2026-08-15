@@ -21,19 +21,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Set up Gradle 8.13 (pinned — AGP 8.x is incompatible with Gradle 9.6+)
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: 8.13
-
-      - name: Lint
-        run: gradle lint --stacktrace
-
-      - name: Build debug APK
-        run: gradle assembleDebug --stacktrace
-
-      - name: Run unit tests
-        run: gradle testDebugUnitTest --stacktrace
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
@@ -44,13 +31,15 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      - name: Set up Gradle (and generate wrapper if missing)
+      - name: Set up Gradle 8.13 (pinned — AGP 8.13.0 requires Gradle >= 8.13)
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.13
 
       - name: Generate Gradle wrapper
         run: |
           if [ ! -f "./gradlew" ]; then
-            gradle wrapper --gradle-version 8.9
+            gradle wrapper --gradle-version 8.13
           fi
 
       - name: Grant execute permission for gradlew
