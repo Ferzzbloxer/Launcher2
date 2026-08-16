@@ -245,8 +245,32 @@ public class IconCache {
                 entry.title = info.getComponentName().getShortClassName();
             }
             entry.contentDescription = mPackageManager.getUserBadgedLabel(entry.title, user);
-            entry.icon = Utilities.createIconBitmap(info.getBadgedIcon(mIconDpi), mContext);
+
+            Drawable iconDrawable = getIconPackDrawable(componentName);
+            if (iconDrawable != null) {
+                iconDrawable = mPackageManager.getUserBadgedIcon(iconDrawable, user);
+            } else {
+                iconDrawable = info.getBadgedIcon(mIconDpi);
+            }
+            entry.icon = Utilities.createIconBitmap(iconDrawable, mContext);
         }
         return entry;
+    }
+
+    /**
+     * Returns the bundled icon-pack replacement for this component, or null if this
+     * component isn't in the bundled icon pack's mapping (see IconPackMap) - in which
+     * case the caller should fall back to the app's own icon as normal.
+     */
+    private Drawable getIconPackDrawable(ComponentName componentName) {
+        Integer resId = IconPackMap.MAP.get(componentName.flattenToString());
+        if (resId == null) {
+            return null;
+        }
+        try {
+            return mContext.getResources().getDrawable(resId, null);
+        } catch (Resources.NotFoundException e) {
+            return null;
+        }
     }
 }
