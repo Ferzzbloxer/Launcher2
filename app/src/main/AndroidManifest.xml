@@ -51,12 +51,19 @@
     <uses-permission android:name="com.android.launcher.permission.READ_SETTINGS" />
     <uses-permission android:name="com.android.launcher.permission.WRITE_SETTINGS" />
 
-    <!-- ADDED: Package visibility (Android 11+). Apps holding a HOME/DEFAULT
-         launcher intent-filter get automatic visibility into all installed
-         packages, so you likely do NOT need a <queries> block for basic app
-         listing. Add specific <queries> entries only if you resolve intents
-         for other purposes (e.g. widget picker, wallpaper apps) and see empty
-         results at runtime. -->
+    <!-- CHANGED: the implicit "default launcher gets automatic package
+         visibility" exemption (Android 11+) is real but inconsistent across
+         OEM skins, some of which restrict it further than stock AOSP. The
+         explicit, vendor-independent fix for a launcher app is to declare
+         a <queries> block matching exactly what LauncherModel queries for
+         (ACTION_MAIN / CATEGORY_LAUNCHER) - this requires no special
+         permission and is Play-Store-compliant. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
 
     <application
         android:name="com.android.launcher2.LauncherApplication"
