@@ -21,6 +21,7 @@ import com.android.launcher2.R;
 import android.app.Activity;
 import android.app.DialogFragment;
 import android.app.Fragment;
+import android.os.Build;
 import android.os.Bundle;
 
 public class WallpaperChooser extends Activity {
@@ -30,6 +31,17 @@ public class WallpaperChooser extends Activity {
     @Override
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
+
+        // This screen's layout predates edge-to-edge display and has no inset-handling
+        // logic (no fitsSystemWindows, no WindowInsets listeners). Apps targeting SDK 35+
+        // get edge-to-edge by default, which would otherwise let content draw underneath
+        // the nav bar / gesture area on both 3-button and gesture navigation. Opt this
+        // activity back out of that so the system continues padding around system bars
+        // like it always did.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            getWindow().setDecorFitsSystemWindows(true);
+        }
+
         setContentView(R.layout.wallpaper_chooser_base);
 
         Fragment fragmentView =
