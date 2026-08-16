@@ -36,20 +36,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.BaseAdapter;
-import android.widget.Gallery;
 import android.widget.ImageView;
-import android.widget.ListAdapter;
-import android.widget.SpinnerAdapter;
+import android.widget.LinearLayout;
 
 import com.android.launcher2.R;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class WallpaperChooserDialogFragment extends DialogFragment implements
-        AdapterView.OnItemSelectedListener, AdapterView.OnItemClickListener {
+public class WallpaperChooserDialogFragment extends DialogFragment {
 
     private static final String TAG = "Launcher.WallpaperChooserDialogFragment";
     private static final String EMBEDDED_KEY = "com.android.launcher2."
@@ -61,6 +56,7 @@ public class WallpaperChooserDialogFragment extends DialogFragment implements
     private ArrayList<Integer> mImages;
     private WallpaperLoader mLoader;
     private WallpaperDrawable mWallpaperDrawable = new WallpaperDrawable();
+    private int mSelectedPosition = 0;
 
     public static WallpaperChooserDialogFragment newInstance() {
         WallpaperChooserDialogFragment fragment = new WallpaperChooserDialogFragment();
@@ -140,21 +136,58 @@ public class WallpaperChooserDialogFragment extends DialogFragment implements
             View view = inflater.inflate(R.layout.wallpaper_chooser, container, false);
             view.setBackground(mWallpaperDrawable);
 
-            final Gallery gallery = (Gallery) view.findViewById(R.id.gallery);
-            gallery.setCallbackDuringFling(false);
-            gallery.setOnItemSelectedListener(this);
-            gallery.setAdapter(new ImageAdapter(getActivity()));
+            final LinearLayout gallery = (LinearLayout) view.findViewById(R.id.gallery);
+            populateGallery(gallery);
 
             View setButton = view.findViewById(R.id.set);
             setButton.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    selectWallpaper(gallery.getSelectedItemPosition());
+                    selectWallpaper(mSelectedPosition);
                 }
             });
             return view;
         }
         return null;
+    }
+
+    private void populateGallery(LinearLayout gallery) {
+        LayoutInflater inflater = getActivity().getLayoutInflater();
+        for (int i = 0; i < mThumbs.size(); i++) {
+            final int position = i;
+            View itemView = inflater.inflate(R.layout.wallpaper_item, gallery, false);
+            ImageView image = (ImageView) itemView.findViewById(R.id.wallpaper_image);
+
+            int thumbRes = mThumbs.get(position);
+            image.setImageResource(thumbRes);
+            Drawable thumbDrawable = image.getDrawable();
+            if (thumbDrawable != null) {
+                thumbDrawable.setDither(true);
+            } else {
+                Log.e(TAG, "Error decoding thumbnail resId=" + thumbRes + " for wallpaper #"
+                        + position);
+            }
+
+            itemView.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    selectItem(position);
+                }
+            });
+
+            gallery.addView(itemView);
+        }
+        if (mThumbs.size() > 0) {
+            selectItem(0);
+        }
+    }
+
+    private void selectItem(int position) {
+        mSelectedPosition = position;
+        if (mLoader != null && mLoader.getStatus() != WallpaperLoader.Status.FINISHED) {
+            mLoader.cancel();
+        }
+        mLoader = (WallpaperLoader) new WallpaperLoader().execute(position);
     }
 
     private void selectWallpaper(int position) {
@@ -168,25 +201,6 @@ public class WallpaperChooserDialogFragment extends DialogFragment implements
         } catch (IOException e) {
             Log.e(TAG, "Failed to set wallpaper: " + e);
         }
-    }
-
-    // Click handler for the Dialog's GridView
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        selectWallpaper(position);
-    }
-
-    // Selection handler for the embedded Gallery view
-    @Override
-    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        if (mLoader != null && mLoader.getStatus() != WallpaperLoader.Status.FINISHED) {
-            mLoader.cancel();
-        }
-        mLoader = (WallpaperLoader) new WallpaperLoader().execute(position);
-    }
-
-    @Override
-    public void onNothingSelected(AdapterView<?> parent) {
     }
 
     private void findWallpapers() {
@@ -221,50 +235,6 @@ public class WallpaperChooserDialogFragment extends DialogFragment implements
                 mThumbs.add(thumbRes);
                 mImages.add(res);
             }
-        }
-    }
-
-    private class ImageAdapter extends BaseAdapter implements ListAdapter, SpinnerAdapter {
-        private LayoutInflater mLayoutInflater;
-
-        ImageAdapter(Activity activity) {
-            mLayoutInflater = activity.getLayoutInflater();
-        }
-
-        public int getCount() {
-            return mThumbs.size();
-        }
-
-        public Object getItem(int position) {
-            return position;
-        }
-
-        public long getItemId(int position) {
-            return position;
-        }
-
-        public View getView(int position, View convertView, ViewGroup parent) {
-            View view;
-
-            if (convertView == null) {
-                view = mLayoutInflater.inflate(R.layout.wallpaper_item, parent, false);
-            } else {
-                view = convertView;
-            }
-
-            ImageView image = (ImageView) view.findViewById(R.id.wallpaper_image);
-
-            int thumbRes = mThumbs.get(position);
-            image.setImageResource(thumbRes);
-            Drawable thumbDrawable = image.getDrawable();
-            if (thumbDrawable != null) {
-                thumbDrawable.setDither(true);
-            } else {
-                Log.e(TAG, "Error decoding thumbnail resId=" + thumbRes + " for wallpaper #"
-                        + position);
-            }
-
-            return view;
         }
     }
 
