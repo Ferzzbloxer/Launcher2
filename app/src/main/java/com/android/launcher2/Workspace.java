@@ -933,6 +933,7 @@ public class Workspace extends SmoothPagedView
                 // of its target. Otherwise, this is an in-progress scroll update - throttle
                 // how often we actually make the IPC call rather than doing it every frame.
                 long now = System.currentTimeMillis();
+                boolean isFinalUpdate = !keepUpdating;
                 if (isFinalUpdate
                         || now - mLastWallpaperOffsetSentTime >= WALLPAPER_OFFSET_IPC_MIN_INTERVAL_MS) {
                     mWallpaperManager.setWallpaperOffsets(mWindowToken,
