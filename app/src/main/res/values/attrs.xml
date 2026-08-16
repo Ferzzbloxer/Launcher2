@@ -75,6 +75,9 @@
         <attr name="heightGap" format="dimension" />
         <!-- The max gap size for each dimension -->
         <attr name="maxGap" format="dimension" />
+             actual available space instead of the static cell_count_x/cell_count_y in
+             config.xml, so the grid tracks screen size (wm size) changes. -->
+        <attr name="useAdaptiveCellCount" format="boolean" />
     </declare-styleable>
 
     <!-- StrokedTextView specific attributes. -->

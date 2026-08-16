@@ -30,4 +30,5 @@
     launcher:cellHeight="@dimen/workspace_cell_height"
     launcher:widthGap="@dimen/workspace_width_gap"
     launcher:heightGap="@dimen/workspace_height_gap"
-    launcher:maxGap="@dimen/workspace_max_gap" />
+    launcher:maxGap="@dimen/workspace_max_gap"
+    launcher:useAdaptiveCellCount="true" />

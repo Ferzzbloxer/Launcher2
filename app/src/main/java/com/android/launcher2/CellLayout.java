@@ -67,6 +67,7 @@ public class CellLayout extends ViewGroup {
 
     private int mCountX;
     private int mCountY;
+    private boolean mUseAdaptiveCellCount;
 
     private int mOriginalWidthGap;
     private int mOriginalHeightGap;
@@ -191,6 +192,7 @@ public class CellLayout extends ViewGroup {
         mWidthGap = mOriginalWidthGap = a.getDimensionPixelSize(R.styleable.CellLayout_widthGap, 0);
         mHeightGap = mOriginalHeightGap = a.getDimensionPixelSize(R.styleable.CellLayout_heightGap, 0);
         mMaxGap = a.getDimensionPixelSize(R.styleable.CellLayout_maxGap, 0);
+        mUseAdaptiveCellCount = a.getBoolean(R.styleable.CellLayout_useAdaptiveCellCount, false);
         mCountX = LauncherModel.getCellCountX();
         mCountY = LauncherModel.getCellCountY();
         mOccupied = new boolean[mCountX][mCountY];
@@ -982,6 +984,23 @@ public class CellLayout extends ViewGroup {
 
         if (widthSpecMode == MeasureSpec.UNSPECIFIED || heightSpecMode == MeasureSpec.UNSPECIFIED) {
             throw new RuntimeException("CellLayout cannot have UNSPECIFIED dimensions");
+        }
+
+        if (mUseAdaptiveCellCount && widthSpecMode == MeasureSpec.EXACTLY
+                && heightSpecMode == MeasureSpec.EXACTLY) {
+            int availWidth = widthSpecSize - getPaddingLeft() - getPaddingRight();
+            int availHeight = heightSpecSize - getPaddingTop() - getPaddingBottom();
+            int newCountX = Math.max(1, availWidth / mCellWidth);
+            int newCountY = Math.max(1, availHeight / mCellHeight);
+            if (newCountX != mCountX || newCountY != mCountY) {
+                mCountX = newCountX;
+                mCountY = newCountY;
+                mOccupied = new boolean[mCountX][mCountY];
+                mTmpOccupied = new boolean[mCountX][mCountY];
+                mTempRectStack.clear();
+                mShortcutsAndWidgets.setCellDimensions(mCellWidth, mCellHeight, mWidthGap,
+                        mHeightGap, mCountX);
+            }
         }
 
         int numWidthGaps = mCountX - 1;
