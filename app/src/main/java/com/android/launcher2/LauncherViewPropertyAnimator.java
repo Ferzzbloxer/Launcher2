@@ -82,13 +82,47 @@ public class LauncherViewPropertyAnimator extends Animator implements AnimatorLi
         // AnimatorSet.forceToEnd() (called e.g. when one animation interrupts another,
         // such as re-triggering the all-apps open/close animation quickly) calls end()
         // on every child Animator, so throwing here crashes the app instead of just
-        // this animator. There's no public API to jump a ViewPropertyAnimator straight
-        // to its end values, so the closest safe behavior is to cancel it - same as our
-        // own cancel() above - which stops the animation and fires the listener
-        // callbacks instead of leaving it hanging or crashing the process.
+        // this animator.
+        //
+        // A previous fix just called cancel() here, but that's wrong in two ways:
+        // it leaves the view's animated properties wherever they happened to be
+        // mid-animation (e.g. half-faded, half-scaled - which is why the all-apps
+        // drawer showed as a stuck black/blank screen), and it fires
+        // onAnimationCancel() on listeners instead of onAnimationEnd(), so whatever
+        // completion logic the caller relies on (e.g. marking the drawer fully
+        // visible/interactive) never runs.
+        //
+        // There's no public API on ViewPropertyAnimator to jump straight to its end
+        // values, so we do it manually: detach our listener first so cancelling the
+        // underlying animator doesn't bounce back into onAnimationCancel(), cancel
+        // it to stop it from ticking further, snap the view directly to its final
+        // target values, then fire onAnimationEnd() ourselves so this behaves like
+        // a real end() instead of a cancel().
         if (mViewPropertyAnimator != null) {
+            mViewPropertyAnimator.setListener(null);
             mViewPropertyAnimator.cancel();
+
+            if (mPropertiesToSet.contains(Properties.TRANSLATION_X)) {
+                mTarget.setTranslationX(mTranslationX);
+            }
+            if (mPropertiesToSet.contains(Properties.TRANSLATION_Y)) {
+                mTarget.setTranslationY(mTranslationY);
+            }
+            if (mPropertiesToSet.contains(Properties.SCALE_X)) {
+                mTarget.setScaleX(mScaleX);
+            }
+            if (mPropertiesToSet.contains(Properties.SCALE_Y)) {
+                mTarget.setScaleY(mScaleY);
+            }
+            if (mPropertiesToSet.contains(Properties.ROTATION_Y)) {
+                mTarget.setRotationY(mRotationY);
+            }
+            if (mPropertiesToSet.contains(Properties.ALPHA)) {
+                mTarget.setAlpha(mAlpha);
+            }
         }
+
+        onAnimationEnd(this);
     }
 
     @Override
