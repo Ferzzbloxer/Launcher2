@@ -182,6 +182,16 @@ public class Workspace extends SmoothPagedView
     int mWallpaperHeight;
     WallpaperOffsetInterpolator mWallpaperOffset;
     boolean mUpdateWallpaperOffsetImmediately = false;
+    // Caps how often we actually push wallpaper offsets to the system (a synchronous
+    // cross-process call) during scrolling. On phones, computeScrollOffset() below jumps
+    // straight to the final value on every call with no smoothing, so onDraw() would
+    // otherwise fire this IPC call on literally every frame - fine at 60Hz, but scales up
+    // proportionally on 90Hz/120Hz displays and can cause system-wide jank while scrolling.
+    // The underlying offset values themselves are untouched by this; we only throttle how
+    // often we notify the system of them. The final settling value is always sent (see
+    // updateWallpaperOffsets()) so the wallpaper never ends up visibly short of its target.
+    private static final long WALLPAPER_OFFSET_IPC_MIN_INTERVAL_MS = 12;
+    private long mLastWallpaperOffsetSentTime = 0;
     private Runnable mDelayedResizeRunnable;
     private Runnable mDelayedSnapToPageRunnable;
     private Point mDisplaySize = new Point();
@@ -917,8 +927,18 @@ public class Workspace extends SmoothPagedView
         }
         if (updateNow) {
             if (mWindowToken != null) {
-                mWallpaperManager.setWallpaperOffsets(mWindowToken,
-                        mWallpaperOffset.getCurrX(), mWallpaperOffset.getCurrY());
+                // keepUpdating == false means this is the final settling value (either an
+                // immediate jump, or computeScrollOffset() reporting it has converged) -
+                // always send that one so the wallpaper doesn't end up visibly stuck short
+                // of its target. Otherwise, this is an in-progress scroll update - throttle
+                // how often we actually make the IPC call rather than doing it every frame.
+                long now = System.currentTimeMillis();
+                if (isFinalUpdate
+                        || now - mLastWallpaperOffsetSentTime >= WALLPAPER_OFFSET_IPC_MIN_INTERVAL_MS) {
+                    mWallpaperManager.setWallpaperOffsets(mWindowToken,
+                            mWallpaperOffset.getCurrX(), mWallpaperOffset.getCurrY());
+                    mLastWallpaperOffsetSentTime = now;
+                }
             }
         }
         if (keepUpdating) {
