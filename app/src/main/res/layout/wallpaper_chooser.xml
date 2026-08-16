@@ -29,11 +29,17 @@
             android:layout_alignParentBottom="true"
             android:background="@drawable/wallpaper_gallery_background">
 
-        <Gallery android:id="@+id/gallery"
+        <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:spacing="-4dp" />
-            
+            android:scrollbars="none">
+
+            <LinearLayout android:id="@+id/gallery"
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </HorizontalScrollView>
+
         <Button android:id="@+id/set"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -41,4 +47,3 @@
             android:layout_gravity="center_horizontal" />
     </LinearLayout>
 </RelativeLayout>
-
