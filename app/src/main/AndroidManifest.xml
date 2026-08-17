@@ -43,6 +43,10 @@
     <uses-permission android:name="android.permission.SET_WALLPAPER_HINTS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.BIND_APPWIDGET" />
+         now explicitly rejects ACTION_DELETE requests from callers that don't hold this -
+         without it, the uninstall confirmation activity starts, silently refuses, and exits
+         without showing anything. -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <!-- REMOVED: CALL_PHONE - unused by Launcher2's own code paths as far as the
          dump shows; drop unless you find a call site that needs it.
          REMOVED: GET_ACCOUNTS_PRIVILEGED - signature|privileged only, not
