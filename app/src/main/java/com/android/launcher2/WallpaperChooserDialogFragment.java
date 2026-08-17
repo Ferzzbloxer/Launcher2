@@ -165,12 +165,38 @@ public class WallpaperChooserDialogFragment extends DialogFragment {
                 && data != null) {
             Uri imageUri = data.getData();
             if (imageUri != null) {
+                setWallpaperFromUri(imageUri);
+            }
+        }
+    }
+
+    private void setWallpaperFromUri(Uri imageUri) {
+        WallpaperManager wpm = (WallpaperManager) getActivity().getSystemService(
+                Context.WALLPAPER_SERVICE);
+        try {
+            startActivity(wpm.getCropAndSetWallpaperIntent(imageUri));
+            return;
+        } catch (Exception e) {
+            Log.w(TAG, "System crop-and-set unavailable, falling back to direct set", e);
+        }
+
+        java.io.InputStream in = null;
+        try {
+            in = getActivity().getContentResolver().openInputStream(imageUri);
+            wpm.setStream(in);
+            Activity activity = getActivity();
+            activity.setResult(Activity.RESULT_OK);
+            activity.finish();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to set wallpaper from picked photo", e);
+            android.widget.Toast.makeText(getActivity(),
+                    "Couldn't set wallpaper from that photo",
+                    android.widget.Toast.LENGTH_SHORT).show();
+        } finally {
+            if (in != null) {
                 try {
-                    WallpaperManager wpm = (WallpaperManager) getActivity().getSystemService(
-                            Context.WALLPAPER_SERVICE);
-                    startActivity(wpm.getCropAndSetWallpaperIntent(imageUri));
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to launch crop-and-set for picked photo", e);
+                    in.close();
+                } catch (IOException ignored) {
                 }
             }
         }
