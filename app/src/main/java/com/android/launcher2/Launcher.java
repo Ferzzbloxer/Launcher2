@@ -2157,23 +2157,22 @@ public final class Launcher extends Activity
     }
 
     void startApplicationUninstallActivity(ApplicationInfo appInfo, UserHandle user) {
-        if ((appInfo.flags & ApplicationInfo.DOWNLOADED_FLAG) == 0) {
-            // System applications cannot be installed. For now, show a toast explaining that.
-            // We may give them the option of disabling apps this way.
-            int messageId = R.string.uninstall_system_app_text;
-            Toast.makeText(this, messageId, Toast.LENGTH_SHORT).show();
-        } else {
-            String packageName = appInfo.componentName.getPackageName();
-            String className = appInfo.componentName.getClassName();
-            Intent intent = new Intent(
-                    Intent.ACTION_DELETE, Uri.fromParts("package", packageName, className));
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
-                    Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
-            if (user != null) {
-                intent.putExtra(Intent.EXTRA_USER, user);
-            }
-            startActivity(intent);
+        // We used to gate this on our own DOWNLOADED_FLAG heuristic and show a "can't
+        // uninstall system apps" toast instead of launching anything - but that heuristic
+        // is unreliable on OEM skins that ship ordinary third-party apps with FLAG_SYSTEM
+        // set (see the matching change in DeleteDropTarget.onDragStart()). Just always
+        // launch the system uninstall confirmation; Android's own uninstaller already
+        // handles apps that genuinely can't be removed.
+        String packageName = appInfo.componentName.getPackageName();
+        String className = appInfo.componentName.getClassName();
+        Intent intent = new Intent(
+                Intent.ACTION_DELETE, Uri.fromParts("package", packageName, className));
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
+                Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+        if (user != null) {
+            intent.putExtra(Intent.EXTRA_USER, user);
         }
+        startActivity(intent);
     }
 
     boolean startActivity(View v, Intent intent, Object tag) {

@@ -143,15 +143,17 @@ public class DeleteDropTarget extends ButtonDropTarget {
             isVisible = false;
         }
 
-        // If we are dragging an application from AppsCustomize, only show the control if we can
-        // delete the app (it was downloaded), and rename the string to "uninstall" in such a case
+        // If we are dragging an application from AppsCustomize, show the uninstall label.
+        // We used to also hide the drop target entirely for apps without DOWNLOADED_FLAG
+        // (heuristically "system" apps), but that heuristic is unreliable - many OEM skins
+        // (this one included) ship ordinary third-party apps baked into the system partition
+        // with FLAG_SYSTEM set, which made the drop target silently disappear for apps that
+        // are, from the user's perspective, completely ordinary installed apps. Android's own
+        // system uninstall confirmation dialog already handles "this can't be uninstalled"
+        // gracefully on its own, so there's no need to pre-emptively guess and hide the
+        // target here.
         if (isAllAppsApplication(source, info)) {
-            ApplicationInfo appInfo = (ApplicationInfo) info;
-            if ((appInfo.flags & ApplicationInfo.DOWNLOADED_FLAG) != 0) {
-                isUninstall = true;
-            } else {
-                isVisible = false;
-            }
+            isUninstall = true;
             // If the user is not allowed to access the app details page or uninstall, then don't
             // let them uninstall from here either.
             UserManager userManager = (UserManager)
