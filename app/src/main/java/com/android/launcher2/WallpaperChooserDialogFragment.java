@@ -18,9 +18,13 @@ package com.android.launcher2;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.DialogFragment;
+import android.app.WallpaperInfo;
 import android.app.WallpaperManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -29,8 +33,10 @@ import android.graphics.ColorFilter;
 import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.service.wallpaper.WallpaperService;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -43,6 +49,7 @@ import com.android.launcher2.R;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class WallpaperChooserDialogFragment extends DialogFragment {
 
@@ -57,6 +64,7 @@ public class WallpaperChooserDialogFragment extends DialogFragment {
     private WallpaperLoader mLoader;
     private WallpaperDrawable mWallpaperDrawable = new WallpaperDrawable();
     private int mSelectedPosition = 0;
+    private static final int REQUEST_PICK_PHOTO = 1;
 
     public static WallpaperChooserDialogFragment newInstance() {
         WallpaperChooserDialogFragment fragment = new WallpaperChooserDialogFragment();
@@ -151,8 +159,29 @@ public class WallpaperChooserDialogFragment extends DialogFragment {
         return null;
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_PICK_PHOTO && resultCode == Activity.RESULT_OK
+                && data != null) {
+            Uri imageUri = data.getData();
+            if (imageUri != null) {
+                try {
+                    WallpaperManager wpm = (WallpaperManager) getActivity().getSystemService(
+                            Context.WALLPAPER_SERVICE);
+                    startActivity(wpm.getCropAndSetWallpaperIntent(imageUri));
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to launch crop-and-set for picked photo", e);
+                }
+            }
+        }
+    }
+
     private void populateGallery(LinearLayout gallery) {
         LayoutInflater inflater = getActivity().getLayoutInflater();
+
+        addPhotoPickerItem(gallery, inflater);
+        addLiveWallpaperItems(gallery, inflater);
+
         for (int i = 0; i < mThumbs.size(); i++) {
             final int position = i;
             View itemView = inflater.inflate(R.layout.wallpaper_item, gallery, false);
@@ -179,6 +208,57 @@ public class WallpaperChooserDialogFragment extends DialogFragment {
         }
         if (mThumbs.size() > 0) {
             selectItem(0);
+        }
+    }
+
+    private void addPhotoPickerItem(LinearLayout gallery, LayoutInflater inflater) {
+        View itemView = inflater.inflate(R.layout.wallpaper_item, gallery, false);
+        ImageView image = (ImageView) itemView.findViewById(R.id.wallpaper_image);
+        image.setImageResource(android.R.drawable.ic_menu_gallery);
+        itemView.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType("image/*");
+                startActivityForResult(intent, REQUEST_PICK_PHOTO);
+            }
+        });
+        gallery.addView(itemView);
+    }
+
+    private void addLiveWallpaperItems(LinearLayout gallery, LayoutInflater inflater) {
+        PackageManager pm = getActivity().getPackageManager();
+        List<ResolveInfo> services = pm.queryIntentServices(
+                new Intent(WallpaperService.SERVICE_INTERFACE), PackageManager.GET_META_DATA);
+
+        for (ResolveInfo resolveInfo : services) {
+            final WallpaperInfo info;
+            try {
+                info = new WallpaperInfo(getActivity(), resolveInfo);
+            } catch (Exception e) {
+                Log.w(TAG, "Skipping broken live wallpaper " + resolveInfo.serviceInfo, e);
+                continue;
+            }
+
+            View itemView = inflater.inflate(R.layout.wallpaper_item, gallery, false);
+            ImageView image = (ImageView) itemView.findViewById(R.id.wallpaper_image);
+            Drawable preview = info.loadThumbnail(pm);
+            if (preview == null) {
+                preview = info.loadIcon(pm);
+            }
+            image.setImageDrawable(preview);
+
+            itemView.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER);
+                    intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+                            info.getComponent());
+                    startActivity(intent);
+                }
+            });
+
+            gallery.addView(itemView);
         }
     }
 
