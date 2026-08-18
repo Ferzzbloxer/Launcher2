@@ -1031,11 +1031,15 @@ public class Folder extends LinearLayout implements DragSource, View.OnClickList
     // to correspond to the animation of the icon back into the folder. This is
     public void hideItem(ShortcutInfo info) {
         View v = getViewForInfo(info);
-        v.setVisibility(INVISIBLE);
+        if (v != null) {
+            v.setVisibility(INVISIBLE);
+        }
     }
     public void showItem(ShortcutInfo info) {
         View v = getViewForInfo(info);
-        v.setVisibility(VISIBLE);
+        if (v != null) {
+            v.setVisibility(VISIBLE);
+        }
     }
 
     public void onAdd(ShortcutInfo item) {
