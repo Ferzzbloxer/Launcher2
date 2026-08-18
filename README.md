@@ -40,3 +40,13 @@
 - Added `REQUEST_DELETE_PACKAGES` permission (root cause of missing confirmation dialog)
 
 Btw, these are formatted in topics, if you want a full guide-through, take a look in the docs folder
+
+# For the future:
+- locked apps
+- add ability to add more sections (like the ones already on the top, "APPS" and "WIDGET", for better organization) 
+- fix wallpaper picker
+- fix widgets not displaying properly
+
+I'm also open for suggestions*
+*Suggestions will be evaluated, as the project aims to keep a 1:1 "legacy" experience while adding the convenience of more recent launchers
+
