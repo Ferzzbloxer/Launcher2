@@ -40,12 +40,46 @@
                 android:background="@drawable/tab_unselected_holo"
                 android:tabStripEnabled="false"
                 android:divider="@null" />
-            <include
-                android:id="@+id/market_button"
-                layout="@layout/market_button"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_gravity="end" />
+                android:layout_gravity="end"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <ImageView
+                    android:id="@+id/add_tab_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:src="@android:drawable/ic_input_add"
+                    android:background="@drawable/tab_widget_indicator_selector"
+                    android:contentDescription="@string/add_tab_button_label"
+                    android:focusable="true"
+                    android:clickable="true" />
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="24dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@color/workspace_all_apps_and_delete_zone_text_color" />
+                <ImageView
+                    android:id="@+id/locked_folder_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:src="@android:drawable/ic_lock_lock"
+                    android:background="@drawable/tab_widget_indicator_selector"
+                    android:contentDescription="@string/locked_folder_button_label"
+                    android:focusable="true"
+                    android:clickable="true" />
+                <include
+                    android:id="@+id/market_button"
+                    layout="@layout/market_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent" />
+            </LinearLayout>
         </FrameLayout>
         <FrameLayout
             android:id="@android:id/tabcontent"

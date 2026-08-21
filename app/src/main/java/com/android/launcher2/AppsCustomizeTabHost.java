@@ -20,18 +20,22 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.res.Resources;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TabHost;
 import android.widget.TabWidget;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.launcher2.R;
 
@@ -50,6 +54,8 @@ public class AppsCustomizeTabHost extends TabHost implements LauncherTransitiona
     private AppsCustomizePagedView mAppsCustomizePane;
     private FrameLayout mAnimationBuffer;
     private LinearLayout mContent;
+    private CustomTabsStore mCustomTabsStore;
+    private TabContentFactory mTabContentFactory;
 
     private boolean mInTransition;
     private boolean mTransitioningToWorkspace;
@@ -106,9 +112,11 @@ public class AppsCustomizeTabHost extends TabHost implements LauncherTransitiona
         mContent = (LinearLayout) findViewById(R.id.apps_customize_content);
         if (tabs == null || mAppsCustomizePane == null) throw new Resources.NotFoundException();
 
+        mCustomTabsStore = new CustomTabsStore(getContext());
+
         // Configure the tabs content factory to return the same paged view (that we change the
         // content filter on)
-        TabContentFactory contentFactory = new TabContentFactory() {
+        mTabContentFactory = new TabContentFactory() {
             public View createTabContent(String tag) {
                 return appsCustomizePane;
             }
@@ -121,12 +129,20 @@ public class AppsCustomizeTabHost extends TabHost implements LauncherTransitiona
         tabView = (TextView) mLayoutInflater.inflate(R.layout.tab_widget_indicator, tabs, false);
         tabView.setText(label);
         tabView.setContentDescription(label);
-        addTab(newTabSpec(APPS_TAB_TAG).setIndicator(tabView).setContent(contentFactory));
+        addTab(newTabSpec(APPS_TAB_TAG).setIndicator(tabView).setContent(mTabContentFactory));
         label = getContext().getString(R.string.widgets_tab_label);
         tabView = (TextView) mLayoutInflater.inflate(R.layout.tab_widget_indicator, tabs, false);
         tabView.setText(label);
         tabView.setContentDescription(label);
-        addTab(newTabSpec(WIDGETS_TAB_TAG).setIndicator(tabView).setContent(contentFactory));
+        addTab(newTabSpec(WIDGETS_TAB_TAG).setIndicator(tabView).setContent(mTabContentFactory));
+
+        // Restore any custom tabs the user created previously (Slice 1: names only - each
+        // custom tab shows the same Applications content as the "Apps" tab for now; per-tab
+        // app filtering + the in-tab "add apps" tile come in a later slice).
+        for (String customTabName : mCustomTabsStore.getTabNames()) {
+            addCustomTabView(customTabName);
+        }
+
         setOnTabChangedListener(this);
 
         // Setup the key listener to jump between the last tab view and the market icon
@@ -136,8 +152,82 @@ public class AppsCustomizeTabHost extends TabHost implements LauncherTransitiona
         View shopButton = findViewById(R.id.market_button);
         shopButton.setOnKeyListener(keyListener);
 
+        View addTabButton = findViewById(R.id.add_tab_button);
+        addTabButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showAddTabDialog();
+            }
+        });
+
+        // Locked folder: PIN + reused Folder UI land in a later slice. Placeholder for now so
+        // the button doesn't feel dead if tapped.
+        View lockedFolderButton = findViewById(R.id.locked_folder_button);
+        lockedFolderButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(getContext(), "Locked folder coming in a future update",
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+
         // Hide the tab bar until we measure
         mTabsContainer.setAlpha(0f);
+    }
+
+    /**
+     * Creates the tab indicator view and registers it with the TabHost for a custom
+     * (previously saved) tab name. Shared between restoring saved tabs at startup and
+     * creating a brand new one from the "+" button.
+     */
+    private void addCustomTabView(String name) {
+        TextView tabView = (TextView) mLayoutInflater.inflate(
+                R.layout.tab_widget_indicator, mTabs, false);
+        tabView.setText(name);
+        tabView.setContentDescription(name);
+        addTab(newTabSpec(name).setIndicator(tabView).setContent(mTabContentFactory));
+    }
+
+    private void showAddTabDialog() {
+        if (mCustomTabsStore.getTabNames().size() >= CustomTabsStore.MAX_CUSTOM_TABS) {
+            Toast.makeText(getContext(), "You've reached the maximum of "
+                    + CustomTabsStore.MAX_TOTAL_TABS + " tabs", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        final EditText input = new EditText(getContext());
+        input.setSingleLine(true);
+
+        new AlertDialog.Builder(getContext())
+                .setTitle("New tab")
+                .setView(input)
+                .setPositiveButton("Add", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String name = input.getText().toString();
+                        CustomTabsStore.AddTabResult result = mCustomTabsStore.addTabName(name);
+                        switch (result) {
+                            case SUCCESS:
+                                addCustomTabView(name.trim());
+                                break;
+                            case ALREADY_EXISTS:
+                                Toast.makeText(getContext(), "A tab with that name already exists",
+                                        Toast.LENGTH_SHORT).show();
+                                break;
+                            case LIMIT_REACHED:
+                                Toast.makeText(getContext(), "You've reached the maximum of "
+                                        + CustomTabsStore.MAX_TOTAL_TABS + " tabs",
+                                        Toast.LENGTH_SHORT).show();
+                                break;
+                            case EMPTY_NAME:
+                                Toast.makeText(getContext(), "Tab name can't be empty",
+                                        Toast.LENGTH_SHORT).show();
+                                break;
+                        }
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     @Override
