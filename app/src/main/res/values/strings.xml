@@ -40,12 +40,6 @@
     <string name="widgets_tab_label">Widgets</string>
     <string name="add_tab_button_label">Add new tab</string>
     <string name="locked_folder_button_label">Locked folder</string>
-    <string name="add_tab_button_label">Add new tab</string>
-    <string name="locked_folder_button_label">Locked folder</string>
-    <string name="add_tab_button_label">Add new tab</string>
-    <string name="locked_folder_button_label">Locked folder</string>
-    <string name="add_tab_button_label">Add new tab</string>
-    <string name="locked_folder_button_label">Locked folder</string>
 
     <!-- AppsCustomize pane -->
     <!-- Message to tell the user to press and hold on a widget to add it [CHAR_LIMIT=50] -->
