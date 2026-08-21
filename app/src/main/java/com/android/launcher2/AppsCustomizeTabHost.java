@@ -56,8 +56,6 @@ public class AppsCustomizeTabHost extends TabHost implements LauncherTransitiona
     private LinearLayout mContent;
     private CustomTabsStore mCustomTabsStore;
     private TabContentFactory mTabContentFactory;
-    private CustomTabsStore mCustomTabsStore;
-    private TabContentFactory mTabContentFactory;
 
     private boolean mInTransition;
     private boolean mTransitioningToWorkspace;
