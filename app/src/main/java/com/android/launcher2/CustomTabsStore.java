@@ -13,12 +13,16 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class CustomTabsStore {
 
     private static final String PREFS_NAME = "custom_tabs";
     private static final String KEY_TAB_NAMES = "tab_names";
+    private static final String KEY_TAB_APPS_PREFIX = "tab_apps_";
 
     // Total tabs including the built-in Apps/Widgets tabs. "Up to 10 tabs" -> 2 built-in +
     // up to 8 custom ones. Easy to change if the intent was 10 additional custom tabs instead.
@@ -82,5 +86,16 @@ public class CustomTabsStore {
             arr.put(name);
         }
         mPrefs.edit().putString(KEY_TAB_NAMES, arr.toString()).apply();
+    }
+
+    public Set<String> getAppsForTab(String tabName) {
+        return new HashSet<String>(mPrefs.getStringSet(KEY_TAB_APPS_PREFIX + tabName,
+                new HashSet<String>()));
+    }
+
+    public void addAppsToTab(String tabName, Collection<String> componentNames) {
+        Set<String> current = getAppsForTab(tabName);
+        current.addAll(componentNames);
+        mPrefs.edit().putStringSet(KEY_TAB_APPS_PREFIX + tabName, current).apply();
     }
 }

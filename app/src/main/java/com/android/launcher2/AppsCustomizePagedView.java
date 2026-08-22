@@ -18,11 +18,13 @@ package com.android.launcher2;
 
 import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
+import android.app.AlertDialog;
 import android.appwidget.AppWidgetHostView;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.LauncherActivityInfo;
 import android.content.pm.LauncherApps;
@@ -50,8 +52,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.ArrayAdapter;
 import android.widget.GridLayout;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.android.launcher2.R;
@@ -59,8 +63,10 @@ import com.android.launcher2.DropTarget.DragObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A simple callback interface which also provides the results of the task.
@@ -176,6 +182,12 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
     private ArrayList<ApplicationInfo> mApps;
     private ArrayList<Object> mWidgets;
 
+    // Custom tabs (Slice 2): which apps show in each user-created tab, and the synthetic
+    // "add apps" tile appended to the end of a custom tab grid.
+    private CustomTabsStore mCustomTabsStore;
+    private String mActiveCustomTab = null;
+    private ApplicationInfo mAddAppsTileInfo;
+
     // Cling
     private boolean mHasShownAllAppsCling;
     private int mClingFocusedX;
@@ -252,6 +264,7 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
         mPackageManager = context.getPackageManager();
         mApps = new ArrayList<ApplicationInfo>();
         mWidgets = new ArrayList<Object>();
+        mCustomTabsStore = new CustomTabsStore(context);
         mIconCache = ((LauncherApplication) context.getApplicationContext()).getIconCache();
         mCanvas = new Canvas();
         mRunningTasks = new ArrayList<AppsCustomizeAsyncTask>();
@@ -350,7 +363,94 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
     private void updatePageCounts() {
         mNumWidgetPages = (int) Math.ceil(mWidgets.size() /
                 (float) (mWidgetCountX * mWidgetCountY));
-        mNumAppsPages = (int) Math.ceil((float) mApps.size() / (mCellCountX * mCellCountY));
+        mNumAppsPages = (int) Math.ceil((float) getDisplayedApps().size() / (mCellCountX * mCellCountY));
+    }
+
+    public void setActiveCustomTab(String tabName) {
+        boolean sameTab = (mActiveCustomTab == null && tabName == null)
+                || (mActiveCustomTab != null && mActiveCustomTab.equals(tabName));
+        if (sameTab) {
+            return;
+        }
+        mActiveCustomTab = tabName;
+        invalidatePageData();
+    }
+
+    private ArrayList<ApplicationInfo> getDisplayedApps() {
+        if (mActiveCustomTab == null) {
+            return mApps;
+        }
+        if (mAddAppsTileInfo == null) {
+            mAddAppsTileInfo = createAddAppsTileInfo();
+        }
+        Set<String> allowed = mCustomTabsStore.getAppsForTab(mActiveCustomTab);
+        ArrayList<ApplicationInfo> filtered = new ArrayList<ApplicationInfo>();
+        for (ApplicationInfo info : mApps) {
+            if (info.componentName != null
+                    && allowed.contains(info.componentName.flattenToString())) {
+                filtered.add(info);
+            }
+        }
+        filtered.add(mAddAppsTileInfo);
+        return filtered;
+    }
+
+    private ApplicationInfo createAddAppsTileInfo() {
+        ApplicationInfo info = new ApplicationInfo();
+        info.title = getContext().getString(R.string.add_tab_button_label);
+        Drawable d = getResources().getDrawable(android.R.drawable.ic_input_add, null);
+        info.iconBitmap = Utilities.createIconBitmap(d, getContext());
+        return info;
+    }
+
+    private void showAddAppsToTabDialog() {
+        final String tabName = mActiveCustomTab;
+        if (tabName == null) {
+            return;
+        }
+        Set<String> alreadyAssigned = mCustomTabsStore.getAppsForTab(tabName);
+
+        final ArrayList<ApplicationInfo> candidates = new ArrayList<ApplicationInfo>();
+        ArrayList<String> labels = new ArrayList<String>();
+        for (ApplicationInfo info : mApps) {
+            if (info.componentName != null
+                    && !alreadyAssigned.contains(info.componentName.flattenToString())) {
+                candidates.add(info);
+                labels.add(info.title.toString());
+            }
+        }
+
+        if (candidates.isEmpty()) {
+            Toast.makeText(getContext(), "All apps are already in this tab",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        final ListView listView = new ListView(getContext());
+        listView.setAdapter(new ArrayAdapter<String>(getContext(),
+                android.R.layout.simple_list_item_multiple_choice, labels));
+        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+
+        new AlertDialog.Builder(getContext())
+                .setTitle("Add apps to '" + tabName + "'")
+                .setView(listView)
+                .setPositiveButton("Add", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        ArrayList<String> selected = new ArrayList<String>();
+                        for (int i = 0; i < candidates.size(); i++) {
+                            if (listView.isItemChecked(i)) {
+                                selected.add(candidates.get(i).componentName.flattenToString());
+                            }
+                        }
+                        if (!selected.isEmpty()) {
+                            mCustomTabsStore.addAppsToTab(tabName, selected);
+                            invalidatePageData();
+                        }
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     protected void onDataReady(int width, int height) {
@@ -507,6 +607,13 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
         if (v instanceof PagedViewIcon) {
             // Animate some feedback to the click
             final ApplicationInfo appInfo = (ApplicationInfo) v.getTag();
+
+            // The synthetic "add apps" tile appended to a custom tab grid - show the
+            // picker instead of trying to launch it as a real app.
+            if (appInfo == mAddAppsTileInfo) {
+                showAddAppsToTabDialog();
+                return;
+            }
 
             // Lock the drawable state to pressed until we return to Launcher
             if (mPressedIcon != null) {
@@ -1017,16 +1124,17 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
     public void syncAppsPageItems(int page, boolean immediate) {
         // ensure that we have the right number of items on the pages
         final boolean isRtl = isLayoutRtl();
+        ArrayList<ApplicationInfo> displayedApps = getDisplayedApps();
         int numCells = mCellCountX * mCellCountY;
         int startIndex = page * numCells;
-        int endIndex = Math.min(startIndex + numCells, mApps.size());
+        int endIndex = Math.min(startIndex + numCells, displayedApps.size());
         PagedViewCellLayout layout = (PagedViewCellLayout) getPageAt(page);
 
         layout.removeAllViewsOnPage();
         ArrayList<Object> items = new ArrayList<Object>();
         ArrayList<Bitmap> images = new ArrayList<Bitmap>();
         for (int i = startIndex; i < endIndex; ++i) {
-            ApplicationInfo info = mApps.get(i);
+            ApplicationInfo info = displayedApps.get(i);
             PagedViewIcon icon = (PagedViewIcon) mLayoutInflater.inflate(
                     R.layout.apps_customize_application, layout, false);
             icon.applyFromApplicationInfo(info, true, this);
