@@ -230,21 +230,20 @@ public class AppsCustomizeTabHost extends TabHost implements LauncherTransitiona
                 .show();
     }
 
+    // Was tied to a one-time width calculation matching the tab strip to the page grid
+    // width below it - fine for a fixed 2-tab layout, but any tab added later (via "+")
+    // makes the strip's real content wider than that locked-in size. Since views aren't
+    // clipped to their parent's bounds by default, the overflow visually bled into
+    // whatever sits next to the tab strip. Now that the tab strip lives inside a
+    // HorizontalScrollView (scrolls instead of overflowing when there are many tabs),
+    // this just needs to make the tab bar visible once after the first real measure.
+    private boolean mHasMadeTabsVisible = false;
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        boolean remeasureTabWidth = (mTabs.getLayoutParams().width <= 0);
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-
-        // Set the width of the tab list to the content width
-        if (remeasureTabWidth) {
-            int contentWidth = mAppsCustomizePane.getPageContentWidth();
-            if (contentWidth > 0 && mTabs.getLayoutParams().width != contentWidth) {
-                // Set the width and show the tab bar
-                mTabs.getLayoutParams().width = contentWidth;
-                mRelayoutAndMakeVisible.run();
-            }
-
-            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            mHasMadeTabsVisible = true;
+            mRelayoutAndMakeVisible.run();
         }
     }
 
