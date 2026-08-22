@@ -290,6 +290,14 @@ public class AppsCustomizeTabHost extends TabHost implements LauncherTransitiona
 
     @Override
     public void onTabChanged(String tabId) {
+        // Tell the pane whether a custom tab (vs. the built-in Apps/Widgets tabs) is now
+        // active, so it knows whether to filter its app grid down to that tab is apps.
+        if (mCustomTabsStore.getTabNames().contains(tabId)) {
+            mAppsCustomizePane.setActiveCustomTab(tabId);
+        } else {
+            mAppsCustomizePane.setActiveCustomTab(null);
+        }
+
         final AppsCustomizePagedView.ContentType type = getContentTypeForTabTag(tabId);
 
         // Animate the changing of the tab content by fading pages in and out
