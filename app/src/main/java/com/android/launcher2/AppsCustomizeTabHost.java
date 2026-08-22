@@ -242,6 +242,7 @@ public class AppsCustomizeTabHost extends TabHost implements LauncherTransitiona
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        if (!mHasMadeTabsVisible) {
             mHasMadeTabsVisible = true;
             mRelayoutAndMakeVisible.run();
         }
