@@ -373,6 +373,7 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
             return;
         }
         mActiveCustomTab = tabName;
+        updatePageCounts();
         // Must pass 0 explicitly and immediateAndOnly=true, matching exactly how the
         // existing setContentType() switch does it. The no-arg invalidatePageData() passes
         // currentPage=-1 internally, which skips resetting the scroll position entirely
@@ -1093,9 +1094,13 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
                 if (currentPage >= mNumAppsPages &&
                         !tag.equals(tabHost.getTabTagForContentType(ContentType.Widgets))) {
                     tabHost.setCurrentTabFromContent(ContentType.Widgets);
-                } else if (currentPage < mNumAppsPages &&
-                        !tag.equals(tabHost.getTabTagForContentType(ContentType.Applications))) {
-                    tabHost.setCurrentTabFromContent(ContentType.Applications);
+                } else if (currentPage < mNumAppsPages) {
+                    String expectedTag = (mActiveCustomTab != null)
+                            ? mActiveCustomTab
+                            : tabHost.getTabTagForContentType(ContentType.Applications);
+                    if (!tag.equals(expectedTag)) {
+                        tabHost.setCurrentTabToCustomTab(expectedTag);
+                    }
                 }
             }
         }

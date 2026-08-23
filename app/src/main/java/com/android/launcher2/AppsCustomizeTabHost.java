@@ -399,6 +399,12 @@ public class AppsCustomizeTabHost extends TabHost implements LauncherTransitiona
         setOnTabChangedListener(this);
     }
 
+    public void setCurrentTabToCustomTab(String tabName) {
+        setOnTabChangedListener(null);
+        setCurrentTabByTag(tabName);
+        setOnTabChangedListener(this);
+    }
+
     /**
      * Returns the content type for the specified tab tag.
      */
