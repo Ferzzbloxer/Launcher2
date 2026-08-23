@@ -373,7 +373,14 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
             return;
         }
         mActiveCustomTab = tabName;
-        invalidatePageData();
+        // Must pass 0 explicitly and immediateAndOnly=true, matching exactly how the
+        // existing setContentType() switch does it. The no-arg invalidatePageData() passes
+        // currentPage=-1 internally, which skips resetting the scroll position entirely
+        // (see PagedView is if-currentPage-greater-than-negative-1 check) - without this,
+        // switching tabs rebuilds the page grid but leaves the paged view scrolled to
+        // wherever it was on the previous tab, which desyncs the tab indicator from the
+        // visible content and lets you swipe into stale leftover pages from a different tab.
+        invalidatePageData(0, true);
     }
 
     private ArrayList<ApplicationInfo> getDisplayedApps() {
@@ -397,7 +404,7 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
 
     private ApplicationInfo createAddAppsTileInfo() {
         ApplicationInfo info = new ApplicationInfo();
-        info.title = getContext().getString(R.string.add_tab_button_label);
+        info.title = getContext().getString(R.string.add_apps_tile_label);
         Drawable d = getResources().getDrawable(android.R.drawable.ic_input_add, null);
         info.iconBitmap = Utilities.createIconBitmap(d, getContext());
         return info;

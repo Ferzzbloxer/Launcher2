@@ -39,6 +39,7 @@
     <!--  Labels for the tabs in the customize drawer -->
     <string name="widgets_tab_label">Widgets</string>
     <string name="add_tab_button_label">Add new tab</string>
+    <string name="add_apps_tile_label">Add apps</string>
     <string name="locked_folder_button_label">Locked folder</string>
 
     <!-- AppsCustomize pane -->
