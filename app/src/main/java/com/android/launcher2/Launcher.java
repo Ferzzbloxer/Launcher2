@@ -58,6 +58,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -365,6 +366,11 @@ public final class Launcher extends Activity
         }
 
         super.onCreate(savedInstanceState);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            getWindow().setNavigationBarContrastEnforced(false);
+        }
+
         LauncherApplication app = ((LauncherApplication)getApplication());
         mSharedPrefs = getSharedPreferences(LauncherApplication.getSharedPreferencesKey(),
                 Context.MODE_PRIVATE);
