@@ -369,6 +369,7 @@ public final class Launcher extends Activity
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             getWindow().setNavigationBarContrastEnforced(false);
+            getWindow().setStatusBarContrastEnforced(false);
         }
 
         LauncherApplication app = ((LauncherApplication)getApplication());
